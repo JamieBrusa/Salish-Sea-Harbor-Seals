@@ -1,0 +1,116 @@
+model{
+
+#Account for year, observer pair, and PSU as a random effect
+
+	    for(t in 1:max(Year)){
+	    eps.year[t] ~ dnorm(0, tau.eps.year)
+	    }
+
+	    for(p in 1:max(pair)){
+	    eps.pair[p] ~ dnorm(0, tau.eps.pair)
+	    }
+
+	for(psu in 1:max(SP)){
+	eps.PSU[psu] ~ dnorm(0, tau.eps.psu)
+	}
+
+
+tau.eps.year ~ dgamma(1,1) #dunif(0,10) might be better
+tau.eps.pair ~ dgamma(1,1)
+tau.eps.psu ~ dgamma(1,1)
+beta.bss.0~dnorm(0, 0.01)
+beta.bss.1~dnorm(0, 0.01)
+beta.bss.2~dnorm(0, 0.01)
+beta.bss.3~dnorm(0, 0.01)
+beta.ho~dnorm(0, 0.1)
+beta.shore7~dnorm(0, 0.1)
+beta.shore5~dnorm(0, 0.1)
+beta.shore9A~dnorm(0, 0.1)
+beta.shore1A~dnorm(0, 0.1)
+beta.shore2A~dnorm(0, 0.1)
+beta.shore6A~dnorm(0, 0.1)
+beta.shore4~dnorm(0, 0.1)
+beta.shore6D~dnorm(0, 0.1)
+beta.shore8A~dnorm(0, 0.1)
+beta.river~dnorm(0, 0.1)
+beta.NPGO~dnorm(0, 0.1)
+beta.Depth~dnorm(0, 0.1)
+beta.upwell~dnorm(0, 0.1)
+beta.ST~dnorm(0, 0.1)
+beta.FT~dnorm(0, 0.1)
+beta.sst~dnorm(0, 0.1)
+beta.sal~dnorm(0, 0.1)
+beta.chl~dnorm(0, 0.1)
+beta.BM~dnorm(0,0.1)
+beta.offshore~dnorm(0,0.1)
+alpha~dnorm(0,.1)
+sigma0~dunif(0,300)
+sigma.eps.year <- 1/sqrt(tau.eps.year)
+sigma.eps.pair <- 1/sqrt(tau.eps.pair)
+
+r.N~dunif(0,100)
+
+
+		
+		for (j in 1:nsites){
+		log(sigma[j]) <- sigma0 + beta.bss.1*BSS.1[j] + beta.bss.2*BSS.2[j] + beta.bss.3*BSS.3[j] + 
+ eps.pair[pair[j]]
+
+  		for(k in 1:nG){
+		
+		p[j,k]<- exp(-xg[k]*xg[k]/(2*sigma[j]*sigma[j]) ) #
+   		f[j,k]<- p[j,k]*pi[k]                         
+    		fc[j,k]<- f[j,k]/pcap[j]       
+    		fct[j,k]<-fc[j,k]/sum(fc[j,1:nG]) 
+  		}
+
+ 	pcap[j]<-sum(f[j,1:nG]) 
+  
+
+	    lambda[j] <- exp(alpha + beta.ho*haul.count[j] + beta.NPGO*NPGO[j] + beta.Depth*MeanDepth[j] + 
+beta.upwell*Upwell[j] +
+ eps.year[Year[j]] + beta.ST*ST[j] + beta.FT*FT[j] + beta.shore7*shore7[j] + beta.shore5*shore5[j] + 
+               beta.shore9A*shore9A[j] + beta.shore1A*shore1A[j] + beta.shore2A*shore2A[j] + eps.PSU[SP[j]] +
+beta.shore6A*shore6A[j] + beta.shore4*shore4[j] + beta.shore6D*shore6D[j] + beta.shore8A*shore8A[j] + beta.sal*sal[j] + 
+beta.sst*sst[j] + beta.chl*chl[j] + beta.river*River[j] + beta.BM*breedmolt[j] + beta.offshore*Offshore[j] + log(area[j]))
+     	    y[j]~ dbin(pcap[j],N[j])
+#	    N[j]~dpois(lambda[j])
+
+
+###stuff for negbin
+     	    N[j]~dpois(lambda.star[j])
+	    lambda.star[j]<-lambda[j]*rho.N[j]
+	    rho.N[j]~dgamma(r.N,r.N)
+
+	###create replicate abundances
+	Nnew[j]~dpois(lambda.star[j])
+#	Nnew[j]~dpois(lambda[j])
+
+	### create fit statistic 1
+	FT1[j]<-pow(sqrt(N[j])-sqrt(lambda[j]),2)
+	FT1new[j]<-pow(sqrt(Nnew[j])-sqrt(lambda[j]),2)
+}
+
+
+	T1p<-sum(FT1[1:nsites])
+	T1newp<-sum(FT1new[1:nsites])
+
+
+Bp.N<-sum(T1newp)>sum(T1p)
+
+      for(i in 1:nind){
+      dclass[i] ~ dcat(fct[site[i], 1:nG]) 
+      dclassnew[i] ~ dcat(fct[site[i], 1:nG]) 
+      Tobsp[i]<- pow(1- sqrt(fct[site[i], dclass[i]]),2)
+      Tobspnew[i]<- pow(1- sqrt(fct[site[i], dclassnew[i]]),2)
+     }
+
+Bp.Obs<-sum(Tobspnew[1:nind])>sum(Tobsp[1:nind])
+
+
+###monitor total abundance
+Nseals<-sum(N[1:nsites])
+
+}
+
+

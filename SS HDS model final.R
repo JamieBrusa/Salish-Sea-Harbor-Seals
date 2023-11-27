@@ -8,19 +8,46 @@ library(ggmcmc)
 library(here)
 
 #Bring in data and do some clean up (work-around to have large dataset on Github)
+setwd(here('Data', 'Partial data'))
+seals.9 <- list.files(path = here('Data', 'Partial data'), pattern = "09")
+seals.9 <- do.call("rbind", lapply(seals.9, FUN=function(files){read.csv(files)}))
+colnames(seals.9)[2] <- "StratPSUSeg"
 seals.11 <- list.files(path = here('Data', 'Partial data'), pattern = "11")
 seals.11 <- do.call("rbind", lapply(seals.11, FUN=function(files){read.csv(files)}))
-colnames(seals.11)[2] <- "StratPSUSeg"
+colnames(seals.11)[2] <- "mean_Length"
+seals.14 <- list.files(path = here('Data', 'Partial data'), pattern = "14")
+seals.14 <- do.call("rbind", lapply(seals.14, FUN=function(files){read.csv(files)}))
+colnames(seals.14)[2] <- "MeanDepth"
+seals.19 <- list.files(path = here('Data', 'Partial data'), pattern = "19")
+seals.19 <- do.call("rbind", lapply(seals.19, FUN=function(files){read.csv(files)}))
+colnames(seals.19)[2] <- "StratPSUSegYJ"
+seals.33 <- list.files(path = here('Data', 'Partial data'), pattern = "33")
+seals.33 <- do.call("rbind", lapply(seals.33, FUN=function(files){read.csv(files)}))
+colnames(seals.33)[2] <- "RM.dist"
+seals.34 <- list.files(path = here('Data', 'Partial data'), pattern = "34")
+seals.34 <- do.call("rbind", lapply(seals.34, FUN=function(files){read.csv(files)}))
+colnames(seals.34)[2] <- "SST"
+seals.35 <- list.files(path = here('Data', 'Partial data'), pattern = "35")
+seals.35 <- do.call("rbind", lapply(seals.35, FUN=function(files){read.csv(files)}))
+colnames(seals.35)[2] <- "chlorophyll"
+seals.36 <- list.files(path = here('Data', 'Partial data'), pattern = "36")
+seals.36 <- do.call("rbind", lapply(seals.36, FUN=function(files){read.csv(files)}))
+colnames(seals.36)[2] <- "Salinity"
+seals.37 <- list.files(path = here('Data', 'Partial data'), pattern = "37")
+seals.37 <- do.call("rbind", lapply(seals.37, FUN=function(files){read.csv(files)}))
+colnames(seals.37)[2] <- "area"
+seals.parts <- cbind(seals.9, seals.11, seals.14, seals.19, seals.33, seals.34, seals.35, seals.36, seals.37)
+seals.parts[, "X" == names(seals.parts)] <- NULL
 setwd(here('Data', 'SS Harbor seal data'))
 path <- here('Data', 'SS Harbor seal data')
 multiseal <- list.files(path = path, pattern = "csv")
 multiseal_df <- do.call("cbind",lapply(multiseal,FUN=function(files){ read.csv(files)}))
 multiseal_df[, "X" == names(multiseal_df)] <- NULL
-colnames(multiseal_df) <- c("YYYY", "MM", "N", "Perp_Dist", "Stratum", "PSU", "Segment", "Beaufort", "L_Glar", "R_Glar",
-                    "Julian", "mean_Length", "ESIcode", "NPGO", "MeanDepth", "sdDepth", "Upwelling",
-                    "Spring.Transition.JD", "Fall.Transition.JD", "StratPSUSegYJ", "dclass", "shore7", "shore5",
-                    "shore9A", "shore1A", "shore2A", "shore6A", "shore4", "shore6D", "shore8A", "numeric_pairs",
-                    "HCount", "RM.dist", "SST", "chlorophyll", "Salinity", "area")
+colnames(multiseal_df) <- c("YYYY", "ESIcode", "NPGO", "Upwelling", "Spring.Transition.JD", "Fall.Transition.JD", 
+                            "dclass", "MM", "shore7", "shore5", "shore9A", "shore1A", "shore2A", "shore6A", "shore4", 
+                            "shore6D", "shore8A", "numeric_pairs", "N", "HCount", "Perp_Dist", "Stratum", "PSU",
+                            "Segment", "Beaufort")
+multiseal_df <- cbind(multiseal_df, seals.parts)
 
 #Figure out how many sites
 nSites <- length(unique(multiseal_df$StratPSUSeg)) #number of segments/zigzags
@@ -281,10 +308,6 @@ breedmolt <- multiseal_df %>% group_by(StratPSUSegYJ) %>%
   summarise(breedmolt = mean(breedmolt))
 breedmolt <- breedmolt$breedmolt
 
-# #For making a matrix of data for dryad:
-# PHVI.data <- cbind(y, Year, StratPSU, pair, haul.count, NPGO, MeanDepth, River, Upwell, ST, FT, shore7, shore5, 
-#                    shore9A, shore1A, shore2A, shore6A, shore4, shore6D, shore8A, sst, chl, sal, BSS.1, BSS.2, 
-#                    BSS.3, breedmolt, Offshore, area, site)
 
 dataCovs<-list(nG=nG, xg=dist.breaks[-1]-13.5, nsites=nSites, Year = Year, pair = pair,
                pi=rep(1/(length(dist.breaks)-1), length(dist.breaks)-1), 
@@ -332,7 +355,7 @@ params.Covs<-c('alpha', 'sigma0', 'Bp.N', 'Nseals', 'beta.NPGO', 'beta.Depth', '
                'beta.sst', 'beta.chl', 'beta.sal', 'beta.BM', 'beta.bss.1', 'beta.bss.2',
                'beta.bss.3', 'Bp.Obs', 'r.N', 'eps.year', 'beta.offshore', 'sigma.eps.psu', 'eps.PSU')
 
-setwd("~/Documents/Windsor/UW Postdoc/Salish Sea Data and Code/Model code")
+setwd(here())
 modelFileCovs='NegBinomBreedMolt.txt'
 
 
@@ -352,7 +375,7 @@ covs.mod_ggs <- ggs(covs.mod_mcmc)
 ggs_geweke(covs.mod_ggs)
 ggs_Rhat(covs.mod_ggs)
 
-
+#Can swap covariates below for more investigation
 ggs_traceplot(covs.mod_ggs, c("beta.ho"))
 ggs_traceplot(covs.mod_ggs, c("alpha"))
 ggs_traceplot(covs.mod_ggs, c("N"))
@@ -362,26 +385,6 @@ ggs_density(covs.mod_ggs, c("beta.b"))
 ggs_density(covs.mod_ggs, c("alpha"))
 ggs_density(covs.mod_ggs, c("N"))
 ggs_density(covs.mod_ggs, c("sigma"))
-
-summary(covs.mod)
-covs_samps <- as.mcmc.list(covs.mod)
-covs.mcmc <- as.mcmc(covs.mod)
-
-CovsMat <- data.frame(as.matrix(covs.mcmc)) %>%
-  select(alpha, sigma0, Bp.N, Nseals, beta.NPGO, beta.Depth, beta.ho,
-         beta.upwell, beta.FT, beta.ST, beta.river, beta.sst, beta.sal, beta.chl, beta.JD)#, Bp.Obs)
-
-CovsMat.mean <- CovsMat %>%
-  group_by() %>%
-  summarize_all(mean)
-
-out.covs <- data.frame(Parameter = c("Alpha", "Sigma","Bp.N", "Nseals", "NPGO", 
-                                     "Depth","HO", "Upwell"),
-                       Mean = apply(CovsMat, 2, mean),
-                       lcl = apply(CovsMat, 2, quantile, probs = c(.05)),
-                       ucl = apply(CovsMat, 2, quantile, probs = c(.95)))
-
-
 
 
 
