@@ -5,15 +5,19 @@ library(runjags)
 library(rjags)
 library(coda)
 library(ggmcmc)
+library(here)
 
 #Bring in data and do some clean up (work-around to have large dataset on Github)
-setwd("~/Documents/Windsor/UW Postdoc/Salish Sea Data and Code/Covariates/SS Harbor seal data")
-path <- "~/Documents/Windsor/UW Postdoc/Salish Sea Data and Code/Covariates/SS Harbor seal data"
+seals.11 <- list.files(path = here('Data', 'Partial data'), pattern = "11")
+seals.11 <- do.call("rbind", lapply(seals.11, FUN=function(files){read.csv(files)}))
+colnames(seals.11)[2] <- "StratPSUSeg"
+setwd(here('Data', 'SS Harbor seal data'))
+path <- here('Data', 'SS Harbor seal data')
 multiseal <- list.files(path = path, pattern = "csv")
 multiseal_df <- do.call("cbind",lapply(multiseal,FUN=function(files){ read.csv(files)}))
 multiseal_df[, "X" == names(multiseal_df)] <- NULL
 colnames(multiseal_df) <- c("YYYY", "MM", "N", "Perp_Dist", "Stratum", "PSU", "Segment", "Beaufort", "L_Glar", "R_Glar",
-                    "StratPSUSeg", "Julian", "mean_Length", "ESIcode", "NPGO", "MeanDepth", "sdDepth", "Upwelling",
+                    "Julian", "mean_Length", "ESIcode", "NPGO", "MeanDepth", "sdDepth", "Upwelling",
                     "Spring.Transition.JD", "Fall.Transition.JD", "StratPSUSegYJ", "dclass", "shore7", "shore5",
                     "shore9A", "shore1A", "shore2A", "shore6A", "shore4", "shore6D", "shore8A", "numeric_pairs",
                     "HCount", "RM.dist", "SST", "chlorophyll", "Salinity", "area")
