@@ -21,7 +21,5 @@ coda
 ggmcmc
 here
 
-### Details of Article
-
 ### How to Use this Repository
 The model code can be used to estimate fine-scale densities of harbor seals using distance sampling data from vessel-based surveys. We provide code for the hierarchical distance sampling model described the manuscript to use with our data, which are provided in the data folder. The model code can be adapted to fit data for future surveys in the Salish Sea or data for other studies using a similar protocol.
