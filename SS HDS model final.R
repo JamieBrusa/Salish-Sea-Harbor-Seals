@@ -323,7 +323,7 @@ dataCovs<-list(nG=nG, xg=dist.breaks[-1]-13.5, nsites=nSites, Year = Year, pair 
 ### initial values for N
 N.in<-t(seals.sum)+3
 
-initsCovs<-function(){list(N=as.vector(N.in), alpha = runif(1,1, 3), sigma0 = runif(1, 110, 130),
+initsCovs<-function(){list(N=as.vector(N.in), alpha = runif(1,1, 3), sigma0 = runif(1, 0, 7),
                            beta.bss.1=rnorm(1, 0, 0.1),
                            beta.bss.2=rnorm(1, 0, 0.1),
                            beta.bss.3=rnorm(1, 0, 0.1),
@@ -363,10 +363,11 @@ covs.mod<-run.jags(model = modelFileCovs,
                    monitor = params.Covs,
                    data = dataCovs,
                    n.chains = 3,
-                   burnin = 50000,
-                   sample = 100000,
+                   adapt = 2000,
+                   burnin = 10000,
+                   sample = 50000,
                    inits = initsCovs,
-                   thin = 2)
+                   thin = 1)
 
 
 #Diagnostics

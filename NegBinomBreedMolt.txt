@@ -15,7 +15,7 @@ model{
 	}
 
 
-tau.eps.year ~ dgamma(1,1) #dunif(0,10) might be better
+tau.eps.year ~ dgamma(1,1) 
 tau.eps.pair ~ dgamma(1,1)
 tau.eps.psu ~ dgamma(1,1)
 beta.bss.0~dnorm(0, 0.01)
@@ -44,9 +44,10 @@ beta.chl~dnorm(0, 0.1)
 beta.BM~dnorm(0,0.1)
 beta.offshore~dnorm(0,0.1)
 alpha~dnorm(0,.1)
-sigma0~dunif(0,300)
+sigma0~dunif(0, 7)
 sigma.eps.year <- 1/sqrt(tau.eps.year)
 sigma.eps.pair <- 1/sqrt(tau.eps.pair)
+sigma.eps.psu <- 1/sqrt(tau.eps.psu)
 
 r.N~dunif(0,100)
 
