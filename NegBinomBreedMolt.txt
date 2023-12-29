@@ -15,6 +15,7 @@ model{
 	}
 
 
+#set up priors
 tau.eps.year ~ dgamma(1,1) 
 tau.eps.pair ~ dgamma(1,1)
 tau.eps.psu ~ dgamma(1,1)
@@ -44,7 +45,7 @@ beta.chl~dnorm(0, 0.1)
 beta.BM~dnorm(0,0.1)
 beta.offshore~dnorm(0,0.1)
 alpha~dnorm(0,.1)
-sigma0~dunif(0, 7)
+sigma0~dunif(0,7)
 sigma.eps.year <- 1/sqrt(tau.eps.year)
 sigma.eps.pair <- 1/sqrt(tau.eps.pair)
 sigma.eps.psu <- 1/sqrt(tau.eps.psu)
@@ -52,6 +53,7 @@ sigma.eps.psu <- 1/sqrt(tau.eps.psu)
 r.N~dunif(0,100)
 
 
+#the observation model
 		
 		for (j in 1:nsites){
 		log(sigma[j]) <- sigma0 + beta.bss.1*BSS.1[j] + beta.bss.2*BSS.2[j] + beta.bss.3*BSS.3[j] + 
@@ -67,6 +69,10 @@ r.N~dunif(0,100)
 
  	pcap[j]<-sum(f[j,1:nG]) 
   
+#the observed counts   	    
+y[j]~ dbin(pcap[j],N[j])
+
+#the abundance model
 
 	    lambda[j] <- exp(alpha + beta.ho*haul.count[j] + beta.NPGO*NPGO[j] + beta.Depth*MeanDepth[j] + 
 beta.upwell*Upwell[j] +
@@ -74,20 +80,21 @@ beta.upwell*Upwell[j] +
                beta.shore9A*shore9A[j] + beta.shore1A*shore1A[j] + beta.shore2A*shore2A[j] + eps.PSU[SP[j]] +
 beta.shore6A*shore6A[j] + beta.shore4*shore4[j] + beta.shore6D*shore6D[j] + beta.shore8A*shore8A[j] + beta.sal*sal[j] + 
 beta.sst*sst[j] + beta.chl*chl[j] + beta.river*River[j] + beta.BM*breedmolt[j] + beta.offshore*Offshore[j] + log(area[j]))
-     	    y[j]~ dbin(pcap[j],N[j])
-#	    N[j]~dpois(lambda[j])
+  
 
 
-###stuff for negbin
+
+
+##Poisson-gamma formulation of the negative binomial
      	    N[j]~dpois(lambda.star[j])
 	    lambda.star[j]<-lambda[j]*rho.N[j]
 	    rho.N[j]~dgamma(r.N,r.N)
 
-	###create replicate abundances
+###create replicate abundances for Bayesian p-value analysis
 	Nnew[j]~dpois(lambda.star[j])
 #	Nnew[j]~dpois(lambda[j])
 
-	### create fit statistic 1
+### create fit statistic 1
 	FT1[j]<-pow(sqrt(N[j])-sqrt(lambda[j]),2)
 	FT1new[j]<-pow(sqrt(Nnew[j])-sqrt(lambda[j]),2)
 }
@@ -97,15 +104,15 @@ beta.sst*sst[j] + beta.chl*chl[j] + beta.river*River[j] + beta.BM*breedmolt[j] +
 	T1newp<-sum(FT1new[1:nsites])
 
 
-Bp.N<-sum(T1newp)>sum(T1p)
+        Bp.N<-sum(T1newp)>sum(T1p)
 
+##distance classes for observation model and Bayesian p-value fit statistics
       for(i in 1:nind){
       dclass[i] ~ dcat(fct[site[i], 1:nG]) 
       dclassnew[i] ~ dcat(fct[site[i], 1:nG]) 
       Tobsp[i]<- pow(1- sqrt(fct[site[i], dclass[i]]),2)
       Tobspnew[i]<- pow(1- sqrt(fct[site[i], dclassnew[i]]),2)
      }
-
 Bp.Obs<-sum(Tobspnew[1:nind])>sum(Tobsp[1:nind])
 
 

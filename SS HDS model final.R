@@ -80,12 +80,10 @@ multiseal_df$dclass<-with(multiseal_df,ifelse(Perp_Dist<=dist.breaks[1],1,ifelse
                                                                                  12))))))))))))
 
 
-##negative binomial dispersion parameter in the Poisson-Gamma formulation
-r <- 1
 
 
 ###########Full model##############
-#Make an array with 1 species x 129 transects x 12 distance classes and populate with N
+#Make an array with 1 species x 129 transects x 12 distance classes and populate with N (number of observations)
 transect <- unique(multiseal_df$StratPSUSegYJ)
 nSites <- length(unique(multiseal_df$StratPSUSegYJ))
 distclass <- unique(multiseal_df$dclass)
@@ -323,7 +321,7 @@ dataCovs<-list(nG=nG, xg=dist.breaks[-1]-13.5, nsites=nSites, Year = Year, pair 
 ### initial values for N
 N.in<-t(seals.sum)+3
 
-initsCovs<-function(){list(N=as.vector(N.in), alpha = runif(1,1, 3), sigma0 = runif(1, 0, 7),
+initsCovs<-function(){list(N=as.vector(N.in), alpha = runif(1,1, 3), sigma0 = runif(1, 5, 6),
                            beta.bss.1=rnorm(1, 0, 0.1),
                            beta.bss.2=rnorm(1, 0, 0.1),
                            beta.bss.3=rnorm(1, 0, 0.1),
@@ -359,15 +357,28 @@ setwd(here())
 modelFileCovs='NegBinomBreedMolt.txt'
 
 
+
+
+
+# Set up to run chains in parallel
+library(parallel)
+cl <- makeCluster(3)
+start.time=Sys.time()
+
 covs.mod<-run.jags(model = modelFileCovs,
                    monitor = params.Covs,
                    data = dataCovs,
                    n.chains = 3,
-                   adapt = 2000,
                    burnin = 10000,
                    sample = 50000,
+                   adapt = 2000,
                    inits = initsCovs,
-                   thin = 1)
+                   thin = 1, method="rjparallel", cl=cl)
+
+stopCluster(cl)
+
+end.time=Sys.time()
+end.time-start.time
 
 
 #Diagnostics
@@ -386,9 +397,5 @@ ggs_density(covs.mod_ggs, c("beta.b"))
 ggs_density(covs.mod_ggs, c("alpha"))
 ggs_density(covs.mod_ggs, c("N"))
 ggs_density(covs.mod_ggs, c("sigma"))
-
-
-
-
-
+ggs_density(covs.mod_ggs, c("Bp.N"))
 
